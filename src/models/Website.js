@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const config = require("../config")
 
 const websiteSchema = new mongoose.Schema({
   userId: {
@@ -37,14 +38,8 @@ const websiteSchema = new mongoose.Schema({
 });
 
 websiteSchema.methods.generateScriptTag = function () {
-  return `<script>
-    (function(a, n, a, l, y, t, i, c, s) {
-      s = document.createElement('script');
-      s.src = 'http://localhost:5000/tracker.js?key=${this.apiKey}';
-      s.async = 1;
-      document.head.appendChild(s);
-    })();
-  </script>`;
+  const baseUrl = config.apiUrl;
+  return `<script src="${baseUrl}/tracker.js?key=${this.apiKey}" async></script>`;
 };
 
 websiteSchema.pre("save", function (next) {

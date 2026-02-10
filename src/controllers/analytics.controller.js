@@ -344,7 +344,7 @@ exports.getWebsiteAnalytics = async (req, res) => {
 
     const browsers = await Analytics.aggregate([
       { $match: { websiteId: website._id, timestamp: { $gte: startDate } } },
-      { $group: { _id: "$browser.name", count: { $sum: 1 } } },
+      { $group: { _id: "$browser", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
 
