@@ -11,7 +11,7 @@ let trackerScriptTemplate = "";
 
 try {
   trackerScriptTemplate = fs.readFileSync(trackerScriptPath, "utf8");
-  console.log("Tracker script loaded");
+  console.log("[Tracker] Script loaded");
 } catch (err) {
   console.error("Failed to load tracker.js", err);
   trackerScriptTemplate = 'console.error("Tracker not available");';
