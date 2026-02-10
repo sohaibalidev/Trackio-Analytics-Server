@@ -7,7 +7,7 @@ exports.googleCallback = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: config.isProduction,
-      sameSite: "strict",
+      sameSite: "none",
     });
     const redirectUrl = `${config.frontendUrl}/auth/callback`;
     res.redirect(redirectUrl);
@@ -33,7 +33,7 @@ exports.logout = async (req, res) => {
     res.clearCookie("token", {
       httpOnly: true,
       secure: config.isProduction,
-      sameSite: "strict",
+      sameSite: "none",
     });
     res.json({ message: "Logged out successfully" });
   } catch (error) {
