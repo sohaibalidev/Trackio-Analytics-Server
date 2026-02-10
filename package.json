@@ -1,12 +1,14 @@
 {
-  "name": "trackio-backend",
+  "name": "trackio-analytics-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build:tracker": "javascript-obfuscator public/js/tracker.js --output public/js/tracker.min.js --compact true --string-array true --string-array-encoding base64 --control-flow-flattening true",
     "start": "npm run build:tracker && node server.js",
-    "dev": "npm run build:tracker && nodemon server.js"
+    "dev": "npm run build:tracker && nodemon server.js",
+    "upload": "git diff --quiet && git diff --cached --quiet && echo 'No changes to commit' || (git add . && git commit -m \"auto-update\" && git push origin main)",
+    "download": "git fetch origin && git reset --hard origin/main && git clean -fd && echo 'Project updated from GitHub'"
   },
   "dependencies": {
     "compression": "^1.7.4",
@@ -39,6 +41,6 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sohaibalidev/trackio-server.git"
+    "url": "git+https://github.com/sohaibalidev/trackio-analytics-server.git"
   }
 }

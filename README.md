@@ -1,6 +1,6 @@
-# Trackio Backend
+# Trackio Analytics Backend
 
-Backend server for the Trackio analytics platform. Handles data collection, processing, and API endpoints for the dashboard.
+Backend server for the Trackio Analytics analytics platform. Handles data collection, processing, and API endpoints for the dashboard.
 
 ## Overview
 

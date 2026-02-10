@@ -8,6 +8,18 @@ const config = require("../config");
 
 const router = express.Router();
 
+router.get("/", (req, res) => {
+  res.status(200).json({
+    name: "Trackio Analytics API",
+    description:
+      "Backend API for Trackio, a custom web analytics platform for tracking website traffic, user sessions, and activity in real time.",
+    author: "Sohaib Ali",
+    repository: "https://github.com/sohaibalidev/Trackio-Analytics-Server",
+    frontend: config.frontendUrl,
+    status: "online",
+  });
+});
+
 router.use("/api/auth", authRoutes);
 router.use("/api/websites", websiteRoutes);
 router.use("/api/analytics", analyticsRoutes);
