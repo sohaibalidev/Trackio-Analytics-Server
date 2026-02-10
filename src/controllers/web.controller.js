@@ -20,8 +20,12 @@ exports.createWebsite = async (req, res) => {
       data: website,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getCurrentUser: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -34,8 +38,12 @@ exports.getWebsites = async (req, res) => {
       data: websites,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getWebsite: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -55,8 +63,12 @@ exports.getWebsite = async (req, res) => {
       data: website,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getWebsite: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -79,8 +91,12 @@ exports.updateWebsite = async (req, res) => {
       data: website,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in updateWebsite: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -102,8 +118,12 @@ exports.deleteWebsite = async (req, res) => {
       message: "Website and all analytics deleted successfully",
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in deleteWebsite: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -126,7 +146,11 @@ exports.regenerateApiKey = async (req, res) => {
       data: website,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in regenerateApiKey: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };

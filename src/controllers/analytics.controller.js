@@ -29,8 +29,12 @@ exports.trackSessionEnd = async (req, res) => {
       updated: result.modifiedCount,
     });
   } catch (error) {
-    console.error("Session end tracking error:", error);
-    res.status(500).json({ message: "Session tracking failed" });
+    console.error("Error in tracksessionEnd: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -127,8 +131,12 @@ exports.trackPageView = async (req, res) => {
 
     res.status(200).json({ success: true });
   } catch (error) {
-    console.error("Tracking error:", error);
-    res.status(500).json({ message: "Tracking failed" });
+    console.error("Error in trackpageview: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -254,8 +262,12 @@ exports.getDashboardAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Dashboard analytics error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getDashboardAnalytics: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -356,8 +368,12 @@ exports.getWebsiteAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error in getWebsiteAnalytics: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
   }
 };
 
