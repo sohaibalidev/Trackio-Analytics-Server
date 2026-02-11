@@ -7,6 +7,8 @@ const {
   trackSessionEnd,
   getWebsiteAnalytics,
   getDashboardAnalytics,
+  deleteVisitById,
+  deleteAllAnalytics,
 } = require("../controllers/analytics.controller");
 
 router.post("/track", trackPageView);
@@ -14,5 +16,8 @@ router.post("/session-end", trackSessionEnd);
 
 router.get("/dashboard", protect, getDashboardAnalytics);
 router.get("/website/:websiteId", protect, getWebsiteAnalytics);
+
+router.delete("/:websiteId/all", protect, deleteAllAnalytics);
+router.delete("/:websiteId/:visitId", protect, deleteVisitById);
 
 module.exports = router;

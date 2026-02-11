@@ -377,6 +377,77 @@ exports.getWebsiteAnalytics = async (req, res) => {
   }
 };
 
+exports.deleteVisitById = async (req, res) => {
+  try {
+    const { websiteId, visitId } = req.params;
+
+    const website = await Website.findOne({
+      _id: websiteId,
+      userId: req.user.id,
+    });
+
+    console.log(website)
+    console.log('user: ', req.user)
+    console.log('website: ', websiteId)
+    console.log('visit: ', visitId)
+
+    if (!website) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    const deleted = await Analytics.findOneAndDelete({
+      _id: visitId,
+      websiteId: website._id,
+    });
+
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Analytics not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Analytics deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error in deleteVisitById:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+exports.deleteAllAnalytics = async (req, res) => {
+  try {
+    const website = await Website.exists({
+      _id: req.params.websiteId,
+      userId: req.user.id,
+    });
+
+    if (!website) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    const result = await Analytics.deleteMany({ websiteId: website._id });
+
+    res.json({
+      success: true,
+      deletedCount: result.deletedCount,
+      message: "All analytics deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error in deleteAllAnalytics: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
+  }
+};
+
 function formatHourlyData(hourlyData) {
   const now = new Date();
   const chartData = [];
