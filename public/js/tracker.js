@@ -5,13 +5,7 @@
   var SESSION_DURATION =
     window.ANALYTICS_CONFIG?.SESSION_DURATION || 60 * 60 * 1000;
 
-  var IP_SERVICES = [
-    "https://api.ipify.org?format=json",
-    "https://api64.ipify.org?format=json",
-    "https://ipapi.co/json/",
-    "https://ipinfo.io/json",
-    "https://api.myip.com",
-  ];
+  var IP_SERVICES = ["https://ipinfo.io/json"];
 
   var sessionStartTime = null;
 
@@ -135,6 +129,46 @@
     return false;
   }
 
+  function getGPUInfo() {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+      if (gl) {
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        if (debugInfo) {
+          return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function testNetworkSpeed() {
+    return new Promise((resolve) => {
+      const startTime = Date.now();
+      const img = new Image();
+      const imageUrl =
+        "https://www.google.com/images/phd/px.gif?t=" + Date.now();
+
+      img.onload = function () {
+        const endTime = Date.now();
+        const duration = (endTime - startTime) / 1000;
+        const speedMbps = ((0.1 * 8) / duration).toFixed(2);
+        resolve(parseFloat(speedMbps));
+      };
+
+      img.onerror = function () {
+        resolve(null);
+      };
+
+      img.src = imageUrl;
+    });
+  }
+
   function getBatteryInfo() {
     if ("getBattery" in navigator) {
       return navigator.getBattery().then(function (battery) {
@@ -157,7 +191,6 @@
         if (currentServiceIndex >= IP_SERVICES.length) {
           resolve({
             ip: localIP || "unknown",
-            ipSource: localIP ? "local" : "unknown",
           });
           return;
         }
@@ -254,56 +287,11 @@
     });
   }
 
-  function getEnvironmentInfo() {
-    var info = {
-      doNotTrack: navigator.doNotTrack || window.doNotTrack,
-      deviceMemory: navigator.deviceMemory || "unknown",
-      connection: {},
-    };
-
-    if (navigator.connection) {
-      info.connection = {
-        effectiveType: navigator.connection.effectiveType,
-        downlink: navigator.connection.downlink,
-      };
-    }
-
-    return info;
-  }
-
   function parseUserAgent(ua) {
     var result = {
-      browser: "Unknown",
-      browserVersion: "Unknown",
       os: "Unknown",
       device: "Unknown",
     };
-
-    if (
-      ua.indexOf("Chrome") > -1 &&
-      ua.indexOf("Edg") === -1 &&
-      ua.indexOf("OPR") === -1
-    ) {
-      result.browser = "Chrome";
-      var match = ua.match(/Chrome\/([0-9.]+)/);
-      if (match) result.browserVersion = match[1];
-    } else if (ua.indexOf("Firefox") > -1) {
-      result.browser = "Firefox";
-      var match = ua.match(/Firefox\/([0-9.]+)/);
-      if (match) result.browserVersion = match[1];
-    } else if (ua.indexOf("Safari") > -1 && ua.indexOf("Chrome") === -1) {
-      result.browser = "Safari";
-      var match = ua.match(/Version\/([0-9.]+)/);
-      if (match) result.browserVersion = match[1];
-    } else if (ua.indexOf("Edg") > -1) {
-      result.browser = "Edge";
-      var match = ua.match(/Edg\/([0-9.]+)/);
-      if (match) result.browserVersion = match[1];
-    } else if (ua.indexOf("OPR") > -1) {
-      result.browser = "Opera";
-      var match = ua.match(/OPR\/([0-9.]+)/);
-      if (match) result.browserVersion = match[1];
-    }
 
     if (ua.indexOf("Windows") > -1) {
       result.os = "Windows";
@@ -332,10 +320,8 @@
     }
 
     var screenWidth = screen.width || window.innerWidth;
-    if (screenWidth < 768) {
+    if (screenWidth < 900) {
       result.device = "mobile";
-    } else if (screenWidth < 1024) {
-      result.device = "tablet";
     } else {
       result.device = "desktop";
     }
@@ -352,19 +338,15 @@
       visitorId: getVisitorId(),
 
       userAgent: navigator.userAgent,
-      browser: uaInfo.browser,
-      browserVersion: uaInfo.browserVersion,
       os: uaInfo.os,
       osVersion: uaInfo.osVersion,
       device: uaInfo.device,
+      gpu: getGPUInfo(),
+      speed: null,
 
       screenResolution: {
         width: screen.width,
         height: screen.height,
-      },
-      viewportSize: {
-        width: window.innerWidth,
-        height: window.innerHeight,
       },
 
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -373,28 +355,29 @@
       pageUrl: window.location.href,
       pageTitle: document.title,
       timestamp: new Date().toISOString(),
-
-      environment: getEnvironmentInfo(),
     };
 
-    return Promise.all([getBatteryInfo(), getIPAddress()]).then(
-      function (results) {
-        var batteryInfo = results[0];
-        var ipInfo = results[1];
+    return Promise.all([
+      getBatteryInfo(),
+      getIPAddress(),
+      testNetworkSpeed(),
+    ]).then(function (results) {
+      var batteryInfo = results[0];
+      var ipInfo = results[1];
+      var speedValue = results[2];
 
-        data.batteryLevel = batteryInfo.level;
-        data.batteryCharging = batteryInfo.charging;
+      data.batteryLevel = batteryInfo.level;
+      data.batteryCharging = batteryInfo.charging;
+      data.speed = speedValue || "notworking";
 
-        data.ipAddress = ipInfo.ip;
-        data.ipSource = ipInfo.ipSource;
-        if (ipInfo.country) data.country = ipInfo.country;
-        if (ipInfo.city) data.city = ipInfo.city;
-        if (ipInfo.region) data.region = ipInfo.region;
-        if (ipInfo.isp) data.isp = ipInfo.isp;
+      data.ipAddress = ipInfo.ip;
+      if (ipInfo.country) data.country = ipInfo.country;
+      if (ipInfo.city) data.city = ipInfo.city;
+      if (ipInfo.region) data.region = ipInfo.region;
+      if (ipInfo.isp) data.isp = ipInfo.isp;
 
-        return data;
-      },
-    );
+      return data;
+    });
   }
 
   function sendData(data) {

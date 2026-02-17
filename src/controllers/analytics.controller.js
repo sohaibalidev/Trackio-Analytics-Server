@@ -82,7 +82,7 @@ exports.trackPageView = async (req, res) => {
       sessionId: trackingData.sessionId,
     }).sort({ timestamp: 1 });
 
-    const analytics = new Analytics({
+const analytics = new Analytics({
       websiteId: website._id,
       sessionId: trackingData.sessionId,
       visitorId: trackingData.visitorId,
@@ -93,21 +93,19 @@ exports.trackPageView = async (req, res) => {
       sessionDuration: null,
 
       ipAddress: ipAddress,
-      ipSource: trackingData.ipSource || "server",
       country: trackingData.country,
       city: trackingData.city,
       region: trackingData.region,
       isp: trackingData.isp,
 
       userAgent: trackingData.userAgent,
-      browser: trackingData.browser,
-      browserVersion: trackingData.browserVersion,
       os: trackingData.os,
       osVersion: trackingData.osVersion,
       device: trackingData.device,
+      gpu: trackingData.gpu,
+      speed: trackingData.speed,
 
       screenResolution: trackingData.screenResolution,
-      viewportSize: trackingData.viewportSize,
 
       timezone: trackingData.timezone,
 
@@ -117,11 +115,6 @@ exports.trackPageView = async (req, res) => {
 
       batteryLevel: trackingData.batteryLevel,
       batteryCharging: trackingData.batteryCharging,
-
-      connection: trackingData.environment?.connection,
-
-      doNotTrack: trackingData.environment?.doNotTrack,
-      deviceMemory: trackingData.environment?.deviceMemory,
 
       timestamp: new Date(trackingData.timestamp),
       lastActivity: new Date(),
@@ -342,12 +335,6 @@ exports.getWebsiteAnalytics = async (req, res) => {
         ? Math.round(avgSessionDurationResult[0].avgDuration / 1000)
         : 0;
 
-    const browsers = await Analytics.aggregate([
-      { $match: { websiteId: website._id, timestamp: { $gte: startDate } } },
-      { $group: { _id: "$browser", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-
     const devices = await Analytics.aggregate([
       { $match: { websiteId: website._id, timestamp: { $gte: startDate } } },
       { $group: { _id: "$device", count: { $sum: 1 } } },
@@ -362,7 +349,6 @@ exports.getWebsiteAnalytics = async (req, res) => {
           totalVisitors: totalVisitors.length,
           totalPageViews,
           avgSessionDuration,
-          browsers,
           devices,
         },
       },

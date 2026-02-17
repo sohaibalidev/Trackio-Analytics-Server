@@ -13,24 +13,19 @@ const analyticsSchema = new mongoose.Schema({
   sessionDuration: Number,
 
   ipAddress: String,
-  ipSource: String,
   country: String,
   city: String,
   region: String,
   isp: String,
 
   userAgent: String,
-  browser: String,
-  browserVersion: String,
   os: String,
   osVersion: String,
   device: String,
+  gpu: String,
+  speed: String, //speed in Mbps
 
   screenResolution: {
-    width: Number,
-    height: Number,
-  },
-  viewportSize: {
     width: Number,
     height: Number,
   },
@@ -43,16 +38,6 @@ const analyticsSchema = new mongoose.Schema({
 
   batteryLevel: Number,
   batteryCharging: Boolean,
-
-  connection: {
-    effectiveType: String,
-    downlink: Number,
-    rtt: Number,
-    saveData: Boolean,
-  },
-
-  doNotTrack: String,
-  deviceMemory: Number,
 
   timestamp: Date,
   lastActivity: Date,

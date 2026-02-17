@@ -7,7 +7,7 @@ exports.googleCallback = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: config.isProduction,
-      sameSite: "none",
+      sameSite: config.isProduction ? 'none' : 'lax',
     });
     const redirectUrl = `${config.frontendUrl}/auth/callback`;
     res.redirect(redirectUrl);

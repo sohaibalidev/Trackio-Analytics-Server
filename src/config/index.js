@@ -30,10 +30,10 @@ config.initCors = async () => {
       if (w.url) config.cors.allowedOrigins.add(getHostname(w.url));
     });
 
-    console.log(
-      "Allowed CORS domains:",
-      Array.from(config.cors.allowedOrigins),
-    );
+    console.log("Allowed CORS domains:");
+    Array.from(config.cors.allowedOrigins).forEach((item, idx) => {
+      console.log(`[${idx + 1}] => "${item}"`);
+    });
   } catch (err) {
     console.error("[CONFIG] Error loading websites:", err.message);
     throw err;
