@@ -23,7 +23,7 @@ exports.trackPageView = async (req, res) => {
     const ipAddress = trackingData.ipAddress || clientIp;
 
     const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    oneHourAgo.setMinutes(oneHourAgo.getMinutes() - 10);
 
     const recentAnalytics = await Analytics.findOne({
       websiteId: website._id,
@@ -39,7 +39,7 @@ exports.trackPageView = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: "Visitor already tracked for this page in the last hour",
+        message: "Visitor already tracked for this page in the last 10 minutes",
       });
     }
 
@@ -422,11 +422,6 @@ exports.deleteVisitById = async (req, res) => {
       _id: websiteId,
       userId: req.user.id,
     });
-
-    console.log(website);
-    console.log("user: ", req.user);
-    console.log("website: ", websiteId);
-    console.log("visit: ", visitId);
 
     if (!website) {
       return res.status(404).json({ message: "Website not found" });
