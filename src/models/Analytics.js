@@ -23,7 +23,7 @@ const analyticsSchema = new mongoose.Schema({
   osVersion: String,
   device: String,
   gpu: String,
-  speed: String, //speed in Mbps
+  speed: String, 
 
   screenResolution: {
     width: Number,

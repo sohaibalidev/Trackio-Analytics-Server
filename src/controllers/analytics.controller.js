@@ -82,7 +82,7 @@ exports.trackPageView = async (req, res) => {
       sessionId: trackingData.sessionId,
     }).sort({ timestamp: 1 });
 
-const analytics = new Analytics({
+    const analytics = new Analytics({
       websiteId: website._id,
       sessionId: trackingData.sessionId,
       visitorId: trackingData.visitorId,
@@ -156,7 +156,7 @@ exports.getDashboardAnalytics = async (req, res) => {
     const websiteIds = websites.map((w) => w._id);
 
     const startDate = new Date();
-    startDate.setHours(startDate.getHours() - 24);
+    startDate.setHours(startDate.getHours() - 24 * 30);
 
     const totalVisitors = await Analytics.distinct("visitorId", {
       websiteId: { $in: websiteIds },
@@ -221,7 +221,7 @@ exports.getDashboardAnalytics = async (req, res) => {
       value: device.count,
     }));
 
-    const hourlyData = await Analytics.aggregate([
+    const dailyData = await Analytics.aggregate([
       {
         $match: {
           websiteId: { $in: websiteIds },
@@ -241,7 +241,7 @@ exports.getDashboardAnalytics = async (req, res) => {
       { $sort: { "_id.date": 1, "_id.hour": 1 } },
     ]);
 
-    const chartData = formatHourlyData(hourlyData);
+    const chartData = formatDailyData(dailyData);
 
     res.json({
       success: true,
@@ -372,10 +372,10 @@ exports.deleteVisitById = async (req, res) => {
       userId: req.user.id,
     });
 
-    console.log(website)
-    console.log('user: ', req.user)
-    console.log('website: ', websiteId)
-    console.log('visit: ', visitId)
+    console.log(website);
+    console.log("user: ", req.user);
+    console.log("website: ", websiteId);
+    console.log("visit: ", visitId);
 
     if (!website) {
       return res.status(404).json({ message: "Website not found" });
@@ -434,35 +434,31 @@ exports.deleteAllAnalytics = async (req, res) => {
   }
 };
 
-function formatHourlyData(hourlyData) {
+function formatDailyData(dailyData) {
   const now = new Date();
   const chartData = [];
 
-  for (let i = 23; i >= 0; i--) {
-    const hour = new Date(now);
-    hour.setHours(hour.getHours() - i);
+  for (let i = 29; i >= 0; i--) {
+    const day = new Date(now);
+    day.setDate(day.getDate() - i);
+    day.setHours(0, 0, 0, 0);
 
-    const hourStr = hour
-      .toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-      .slice(0, 5);
+    const dayStr = day.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+    });
 
-    const matchingHour = hourlyData.find((h) => {
-      const dataHour = new Date(h._id.date);
-      dataHour.setHours(h._id.hour);
-      return (
-        dataHour.getHours() === hour.getHours() &&
-        dataHour.getDate() === hour.getDate()
-      );
+    const matchingDay = dailyData.find((d) => {
+      const dataDate = new Date(d._id.date);
+      dataDate.setHours(0, 0, 0, 0);
+
+      return dataDate.getTime() === day.getTime();
     });
 
     chartData.push({
-      time: hourStr,
-      visitors: matchingHour ? matchingHour.visitors.length : 0,
-      pageviews: matchingHour ? matchingHour.pageviews : 0,
+      time: dayStr,
+      visitors: matchingDay ? matchingDay.visitors.length : 0,
+      pageviews: matchingDay ? matchingDay.pageviews : 0,
     });
   }
 
