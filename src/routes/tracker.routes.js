@@ -5,7 +5,10 @@ const config = require("../config");
 
 const router = express.Router();
 
-const trackerScriptPath = path.join(__dirname, "../../public/js/tracker.min.js");
+const trackerScriptPath = path.join(
+  __dirname,
+  "../../public/js/tracker.min.js",
+);
 
 let trackerScriptTemplate = "";
 
@@ -27,7 +30,7 @@ router.get("/tracker.js", (req, res) => {
   const configObject = {
     API_KEY: apiKey,
     TRACKER_URL: `${config.apiUrl}/api/analytics/track`,
-    SESSION_END_URL: `${config.apiUrl}/api/analytics/session-end`,
+    SOCKET_URL: config.apiUrl,
     SESSION_DURATION: 60 * 60 * 1000,
   };
 

@@ -7,6 +7,8 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const apiKeyMiddleware = require("./middlewares/apiKey");
+const http = require("http");
+const socketio = require("./socket"); 
 
 require("./config/passport");
 
@@ -34,4 +36,9 @@ app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
-module.exports = app;
+const server = http.createServer(app);
+const io = socketio(server);
+
+app.set('io', io);
+
+module.exports = { app, server, io };

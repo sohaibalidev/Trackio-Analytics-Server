@@ -1,13 +1,17 @@
 (function () {
   var API_KEY = window.ANALYTICS_CONFIG?.API_KEY || "";
   var TRACKER_URL = window.ANALYTICS_CONFIG?.TRACKER_URL || "";
-  var SESSION_END_URL = window.ANALYTICS_CONFIG?.SESSION_END_URL || "";
+  var SOCKET_URL =
+    window.ANALYTICS_CONFIG?.SOCKET_URL || window.location.origin;
   var SESSION_DURATION =
     window.ANALYTICS_CONFIG?.SESSION_DURATION || 60 * 60 * 1000;
 
   var IP_SERVICES = ["https://ipinfo.io/json"];
 
-  var sessionStartTime = null;
+  var socket = null;
+  var heartbeatInterval = null;
+  var socketConnected = false;
+  var analyticsData = null;
 
   var STORAGE_KEYS = {
     VISITOR_ID: "x7f3q9p2",
@@ -59,11 +63,6 @@
     sessionStorage.setItem(encodedKey, encodedValue);
   }
 
-  function removeSessionStorage(key) {
-    var encodedKey = STORAGE_KEYS[key];
-    sessionStorage.removeItem(encodedKey);
-  }
-
   function getVisitorId() {
     var visitorId = getLocalStorage("VISITOR_ID");
     if (!visitorId) {
@@ -82,51 +81,11 @@
     if (!sessionId || !lastActivity || now - lastActivity > SESSION_DURATION) {
       sessionId = "ses_" + Math.random().toString(36).substr(2, 9) + "_" + now;
       setSessionStorage("SESSION_ID", sessionId);
-
-      sessionStartTime = now;
       setSessionStorage("SESSION_START", now);
-    } else {
-      sessionStartTime = getSessionStorage("SESSION_START") || now;
     }
 
     setSessionStorage("LAST_ACTIVITY", now);
     return sessionId;
-  }
-
-  function getSessionDuration() {
-    if (!sessionStartTime) {
-      sessionStartTime = getSessionStorage("SESSION_START") || Date.now();
-    }
-    return Date.now() - sessionStartTime;
-  }
-
-  function sendSessionEndData() {
-    var sessionId = getSessionStorage("SESSION_ID");
-    var duration = getSessionDuration();
-
-    if (sessionId && duration > 0) {
-      var data = {
-        apiKey: API_KEY,
-        sessionId: sessionId,
-        duration: duration,
-      };
-
-      if (navigator.sendBeacon) {
-        var blob = new Blob([JSON.stringify(data)], {
-          type: "application/json",
-        });
-        return navigator.sendBeacon(SESSION_END_URL, blob);
-      } else {
-        return fetch(SESSION_END_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        });
-      }
-    }
-    return false;
   }
 
   function getGPUInfo() {
@@ -405,22 +364,113 @@
       });
   }
 
+  function initializeSocket() {
+    if (typeof io === "undefined") {
+      console.error("[Analytics] Socket.IO not loaded!");
+      collectData().then(sendData);
+      return;
+    }
+
+    try {
+      socket = io(SOCKET_URL, {
+        auth: {
+          apiKey: API_KEY,
+        },
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 10000,
+      });
+
+      socket.on("connect", function () {
+        socketConnected = true;
+
+        collectData().then(function (data) {
+          analyticsData = data;
+
+          socket.emit("start-session", {
+            sessionId: data.sessionId,
+            visitorId: data.visitorId,
+            pageUrl: data.pageUrl,
+            pageTitle: data.pageTitle,
+            ...data,
+          });
+
+          sendData(data);
+        });
+
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(function () {
+          if (socketConnected) {
+            socket.emit("heartbeat", {
+              sessionId: getSessionId(),
+            });
+          }
+        }, 30000);
+      });
+
+      socket.on("disconnect", function (reason) {
+        socketConnected = false;
+      });
+
+      socket.on("connect_error", function (error) {
+        console.warn("[Analytics] Socket connection error:", error.message);
+        socketConnected = false;
+        collectData().then(sendData);
+      });
+    } catch (error) {
+      console.warn("[Analytics] Failed to initialize socket:", error);
+      collectData().then(sendData);
+    }
+  }
+
+  function loadDependencies() {
+    if (typeof io !== "undefined") {
+      initializeSocket();
+      return;
+    }
+
+    var script = document.createElement("script");
+    script.src = "https://cdn.socket.io/4.5.4/socket.io.min.js";
+    script.crossOrigin = "anonymous";
+    script.async = false;
+
+    script.onload = function () {
+      initializeSocket();
+    };
+
+    script.onerror = function () {
+      console.error(
+        "[Analytics] Failed to load Socket.IO, falling back to regular tracking",
+      );
+      collectData().then(sendData);
+    };
+
+    document.head.appendChild(script);
+  }
+
   function init() {
     if (!API_KEY || !TRACKER_URL) {
       console.error("Analytics API key or URL missing");
       return;
     }
 
-    setTimeout(function () {
-      collectData().then(function (data) {
-        return sendData(data);
-      });
-    }, 500);
+    loadDependencies();
 
     document.addEventListener("visibilitychange", function () {
-      setTimeout(function () {
-        collectData().then(sendData);
-      }, 1000);
+      if (document.visibilityState === "visible") {
+        collectData().then(function (data) {
+          if (socketConnected && socket) {
+            socket.emit("page-view", {
+              sessionId: data.sessionId,
+              pageUrl: data.pageUrl,
+              pageTitle: data.pageTitle,
+            });
+          }
+          sendData(data);
+        });
+      }
     });
 
     var resizeTimeout;
@@ -432,11 +482,10 @@
     });
 
     window.addEventListener("beforeunload", function () {
-      sendSessionEndData();
-    });
-
-    window.addEventListener("unload", function () {
-      sendSessionEndData();
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (socket) {
+        socket.disconnect();
+      }
     });
   }
 
@@ -449,10 +498,12 @@
   window.analytics = {
     collectData: collectData,
     sendData: sendData,
-    sendSessionEndData: sendSessionEndData,
     getVisitorId: getVisitorId,
     getSessionId: getSessionId,
-    getSessionDuration: getSessionDuration,
+    getSessionDuration: function () {
+      var start = getSessionStorage("SESSION_START");
+      return start ? Date.now() - parseInt(start) : 0;
+    },
     _helpers: {
       encodeValue: encodeValue,
       decodeValue: decodeValue,

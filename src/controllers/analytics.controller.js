@@ -1,42 +1,8 @@
 const { Analytics, Website } = require("../models/");
-
-exports.trackSessionEnd = async (req, res) => {
-  try {
-    const { apiKey, sessionId, duration } = req.body;
-
-    const website = await Website.findOne({ apiKey });
-
-    if (!website || !website.isActive) {
-      return res.status(404).json({ message: "Website not found or inactive" });
-    }
-
-    const result = await Analytics.updateMany(
-      {
-        websiteId: website._id,
-        sessionId: sessionId,
-        sessionDuration: null,
-      },
-      {
-        $set: {
-          sessionDuration: duration,
-          lastActivity: new Date(),
-        },
-      },
-    );
-
-    res.status(200).json({
-      success: true,
-      updated: result.modifiedCount,
-    });
-  } catch (error) {
-    console.error("Error in tracksessionEnd: ", error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "Internal server error",
-    });
-  }
-};
+const {
+  formatDailyData,
+  generateEmptyChartData,
+} = require("../utils/analytics");
 
 exports.trackPageView = async (req, res) => {
   try {
@@ -125,6 +91,91 @@ exports.trackPageView = async (req, res) => {
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error in trackpageview: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
+  }
+};
+
+exports.getActiveSessions = async (req, res) => {
+  try {
+    const { websiteId } = req.query;
+
+    if (!websiteId) {
+      return res.status(400).json({ message: "Website ID required" });
+    }
+
+    const website = await Website.findOne({
+      _id: websiteId,
+      userId: req.user._id,
+    });
+
+    if (!website) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    const io = req.app.get("io");
+
+    const activeCount = io.getActiveSessionsCount(websiteId);
+    const sessions = io.getActiveSessionsForWebsite(websiteId);
+
+    res.status(200).json({
+      success: true,
+      activeCount,
+      sessions,
+    });
+  } catch (error) {
+    console.error("Error in getActiveSessions: ", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "Internal server error",
+    });
+  }
+};
+
+exports.getSessionDetails = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { websiteId } = req.query;
+
+    if (!websiteId) {
+      return res.status(400).json({ message: "Website ID required" });
+    }
+
+    const website = await Website.findOne({
+      _id: websiteId,
+      userId: req.user._id,
+    });
+
+    if (!website) {
+      return res.status(404).json({ message: "Website not found" });
+    }
+
+    const session = await Analytics.findOne({
+      websiteId: website._id,
+      sessionId: sessionId,
+    }).sort({ timestamp: -1 });
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    const pageViews = await Analytics.find({
+      websiteId: website._id,
+      sessionId: sessionId,
+    }).sort({ timestamp: 1 });
+
+    res.status(200).json({
+      success: true,
+      session,
+      pageViews,
+      totalPageViews: pageViews.length,
+    });
+  } catch (error) {
+    console.error("Error in getSessionDetails: ", error);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -433,60 +484,3 @@ exports.deleteAllAnalytics = async (req, res) => {
     });
   }
 };
-
-function formatDailyData(dailyData) {
-  const now = new Date();
-  const chartData = [];
-
-  for (let i = 29; i >= 0; i--) {
-    const day = new Date(now);
-    day.setDate(day.getDate() - i);
-    day.setHours(0, 0, 0, 0);
-
-    const dayStr = day.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-    });
-
-    const matchingDay = dailyData.find((d) => {
-      const dataDate = new Date(d._id.date);
-      dataDate.setHours(0, 0, 0, 0);
-
-      return dataDate.getTime() === day.getTime();
-    });
-
-    chartData.push({
-      time: dayStr,
-      visitors: matchingDay ? matchingDay.visitors.length : 0,
-      pageviews: matchingDay ? matchingDay.pageviews : 0,
-    });
-  }
-
-  return chartData;
-}
-
-function generateEmptyChartData() {
-  const chartData = [];
-  const now = new Date();
-
-  for (let i = 23; i >= 0; i--) {
-    const hour = new Date(now);
-    hour.setHours(hour.getHours() - i);
-
-    const hourStr = hour
-      .toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      })
-      .slice(0, 5);
-
-    chartData.push({
-      time: hourStr,
-      visitors: 0,
-      pageviews: 0,
-    });
-  }
-
-  return chartData;
-}
