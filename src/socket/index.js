@@ -241,4 +241,4 @@ function setupSocket(server) {
   return io;
 }
 
-module.exports = setupSocket;
+module.exports = setupSocket, {activeSessions};

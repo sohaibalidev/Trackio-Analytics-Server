@@ -226,35 +226,22 @@ exports.getDashboardAnalytics = async (req, res) => {
 
     const activeSessions = await Analytics.distinct("sessionId", {
       websiteId: { $in: websiteIds },
-      timestamp: { $gte: activeSessionsThreshold },
+      sessionDuration: null,
     });
 
-    const avgSessionDurationResult = await Analytics.aggregate([
-      {
-        $match: {
-          websiteId: { $in: websiteIds },
-          timestamp: { $gte: startDate },
-          sessionDuration: { $ne: null, $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: "$sessionId",
-          duration: { $first: "$sessionDuration" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          avgDuration: { $avg: "$duration" },
-        },
-      },
-    ]);
+    const analytics = await Analytics.find({
+      websiteId: { $in: websiteIds },
+      timestamp: { $gte: startDate },
+    }).sort({ timestamp: -1 });
 
-    const avgSessionDuration =
-      avgSessionDurationResult.length > 0
-        ? Math.round(avgSessionDurationResult[0].avgDuration / 1000)
-        : 0;
+    const totalDuration = analytics.reduce(
+      (acc, curr) => acc + (curr.sessionDuration || 0),
+      0,
+    );
+
+    const avgSessionDuration = formatDuration(
+      totalDuration / (totalPageViews || 1),
+    );
 
     const devices = await Analytics.aggregate([
       {
@@ -318,7 +305,7 @@ exports.getDashboardAnalytics = async (req, res) => {
 exports.getWebsiteAnalytics = async (req, res) => {
   try {
     const { websiteId } = req.params;
-    const { period = "24h" } = req.query;
+    const { period = "30h" } = req.query;
 
     const website = await Website.findOne({
       _id: websiteId,
@@ -359,32 +346,14 @@ exports.getWebsiteAnalytics = async (req, res) => {
       timestamp: { $gte: startDate },
     });
 
-    const avgSessionDurationResult = await Analytics.aggregate([
-      {
-        $match: {
-          websiteId: website._id,
-          timestamp: { $gte: startDate },
-          sessionDuration: { $ne: null, $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: "$sessionId",
-          duration: { $first: "$sessionDuration" },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          avgDuration: { $avg: "$duration" },
-        },
-      },
-    ]);
+    const totalDuration = analytics.reduce(
+      (acc, curr) => acc + (curr.sessionDuration || 0),
+      0,
+    );
 
-    const avgSessionDuration =
-      avgSessionDurationResult.length > 0
-        ? Math.round(avgSessionDurationResult[0].avgDuration / 1000)
-        : 0;
+    const avgSessionDuration = formatDuration(
+      totalDuration / (totalPageViews || 1),
+    );
 
     const devices = await Analytics.aggregate([
       { $match: { websiteId: website._id, timestamp: { $gte: startDate } } },
@@ -400,6 +369,7 @@ exports.getWebsiteAnalytics = async (req, res) => {
           totalVisitors: totalVisitors.length,
           totalPageViews,
           avgSessionDuration,
+          totalDuration,
           devices,
         },
       },
@@ -478,4 +448,20 @@ exports.deleteAllAnalytics = async (req, res) => {
       message: "Internal server error",
     });
   }
+};
+
+const formatDuration = (seconds) => {
+  if (!seconds) return "0s";
+
+  if (seconds >= 3600) {
+    const hours = (seconds / 3600).toFixed(1);
+    return `${hours}h`;
+  }
+
+  if (seconds >= 60) {
+    const minutes = (seconds / 60).toFixed(1);
+    return `${minutes}m`;
+  }
+
+  return `${seconds.toFixed(1)}s`;
 };
