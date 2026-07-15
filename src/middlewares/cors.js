@@ -5,27 +5,31 @@ const getHostname = require("../utils/getHostname");
 const corsMiddleware = cors({
   origin: (origin, cb) => {
     console.log("========== CORS DEBUG ==========");
-    console.log("Origin:", origin);
+    console.log("Request Origin:", origin);
 
+    // Postman, mobile apps, server requests
     if (!origin) {
-      console.log("No origin, allowing");
       return cb(null, true);
     }
 
-    const hostname = getHostname(origin.toLowerCase());
-    console.log("Hostname:", hostname);
-    console.log("Allowed origins:", Array.from(config.cors.allowedOrigins));
+    const hostname = getHostname(origin).toLowerCase();
+
+    console.log("Allowed:", Array.from(config.cors.allowedOrigins));
 
     if (config.cors.allowedOrigins.has(hostname)) {
-      console.log("Origin allowed");
+      console.log("CORS Allowed");
       return cb(null, true);
     }
 
-    console.log("Origin blocked");
-    cb(null, false);
+    console.log("CORS Blocked:", hostname);
+
+    return cb(null, false);
   },
+
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 });
 
