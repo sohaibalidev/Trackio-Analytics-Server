@@ -2,7 +2,7 @@
   "name": "trackio-analytics-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "src/app.js",
+  "main": "index.js",
   "scripts": {
     "build:tracker": "javascript-obfuscator public/js/tracker.js --output public/js/tracker.min.js --compact true --string-array true --string-array-encoding base64 --control-flow-flattening true",
     "start": "npm run build:tracker && node index.js",

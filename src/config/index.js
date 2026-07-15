@@ -7,6 +7,7 @@ const config = {
   apiUrl: process.env.API_URL,
   database: {
     uri: process.env.MONGODB_URI,
+    DB_NAME: process.env.DB_NAME
   },
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
