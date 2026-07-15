@@ -4,7 +4,7 @@ const app = require("./src/app");
 const http = require("http");
 const socketio = require("./src/socket");
 const config = require("./src/config");
-const connectDB = require("./src/config/database");
+const { connectDB } = require("./src/config/database");
 
 (async () => {
   try {

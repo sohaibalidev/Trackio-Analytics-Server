@@ -16,10 +16,7 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(async (req, res, next) => {
-  await config.initCors();
-  corsMiddleware(req, res, next);
-});
+app.use(corsMiddleware);
 
 app.use(cookieParser());
 
