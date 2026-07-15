@@ -1,11 +1,10 @@
 require("dotenv").config();
 
-const app = require("./src/app"); 
+const app = require("./src/app");  
 const http = require("http");
 const socketio = require("./src/socket");
 const config = require("./src/config");
 const connectDB = require("./src/config/database");
-const routes = require("./src/routes/index.routes");
 
 // Connect to database
 connectDB();
@@ -15,10 +14,7 @@ const server = http.createServer(app);
 
 // Initialize Socket.IO
 const io = socketio(server);
-app.set("io", io);
-
-// Mount routes
-app.use(routes);
+app.set('io', io);
 
 // Start server
 (async () => {

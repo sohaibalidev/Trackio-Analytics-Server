@@ -7,6 +7,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const apiKeyMiddleware = require("./middlewares/apiKey");
+const routes = require("./routes/index.routes");
 
 require("./config/passport");
 
@@ -31,5 +32,7 @@ app.use(apiKeyMiddleware);
 app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.use(routes);
 
 module.exports = app;
