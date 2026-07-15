@@ -1,7 +1,7 @@
-const { nanoid } = require("nanoid");
+const crypto = require("crypto");
 
-const generateApiKey = () => {
-  return `atk_${nanoid(32)}`;
-};
+function generateApiKey() {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 module.exports = generateApiKey;
