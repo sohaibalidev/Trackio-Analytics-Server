@@ -7,19 +7,25 @@ const compression = require("compression");
 const morgan = require("morgan");
 const apiKeyMiddleware = require("./middlewares/apiKey");
 const routes = require("./routes/index.routes");
+const corsMiddleware = require("./middlewares/cors");
 
 require("./config/passport");
 
 const app = express();
+
 app.set("trust proxy", 1);
 
+app.use(corsMiddleware);
+
 app.use(cookieParser());
+
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   }),
 );
+
 app.use(compression());
 app.use(morgan("dev"));
 
@@ -28,6 +34,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(apiKeyMiddleware);
 app.use(sessionMiddleware);
+
 app.use(passport.initialize());
 app.use(passport.session());
 

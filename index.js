@@ -5,14 +5,11 @@ const http = require("http");
 const socketio = require("./src/socket");
 const config = require("./src/config");
 const connectDB = require("./src/config/database");
-const corsMiddleware = require("./src/middlewares/cors");
 
 (async () => {
   try {
     await connectDB();
     await config.initCors();
-
-    app.use(corsMiddleware);
 
     const server = http.createServer(app);
     const io = socketio(server);
