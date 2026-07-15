@@ -1,24 +1,20 @@
 require("dotenv").config();
 
-const app = require("./src/app");  
+const app = require("./src/app");
 const http = require("http");
 const socketio = require("./src/socket");
 const config = require("./src/config");
 const connectDB = require("./src/config/database");
 
-// Connect to database
-connectDB();
-
-// Create HTTP server
-const server = http.createServer(app);
-
-// Initialize Socket.IO
-const io = socketio(server);
-app.set('io', io);
-
-// Start server
 (async () => {
   try {
+    await connectDB();
+    console.log(`[MONGO] Connection Established`);
+
+    const server = http.createServer(app);
+    const io = socketio(server);
+    app.set("io", io);
+
     await config.initCors();
 
     server.listen(config.port, () => {
@@ -26,19 +22,18 @@ app.set('io', io);
       console.log(`[SERVER] Client URL ${config.frontendUrl}`);
       console.log(`[SERVER] Socket.IO enabled for live sessions`);
     });
+
+    process.on("unhandledRejection", (err) => {
+      console.error("[SERVER] Unhandled Rejection:", err.message);
+      server.close(() => process.exit(1));
+    });
+
+    process.on("uncaughtException", (err) => {
+      console.error("[SERVER] Uncaught Exception:", err.message);
+      process.exit(1);
+    });
   } catch (err) {
     console.error("[SERVER] Failed to start:", err.message);
     process.exit(1);
   }
 })();
-
-// Error handlers
-process.on("unhandledRejection", (err) => {
-  console.error("[SERVER] Unhandled Rejection:", err.message);
-  server.close(() => process.exit(1));
-});
-
-process.on("uncaughtException", (err) => {
-  console.error("[SERVER] Uncaught Exception:", err.message);
-  process.exit(1);
-});
