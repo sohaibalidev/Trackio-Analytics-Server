@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const apiKeyMiddleware = require("./middlewares/apiKey");
 const routes = require("./routes/index.routes");
 const corsMiddleware = require("./middlewares/cors");
+const config = require("./config");
 
 require("./config/passport");
 
@@ -15,7 +16,10 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-app.use(corsMiddleware);
+app.use(async (req, res, next) => {
+  await config.initCors();
+  corsMiddleware(req, res, next);
+});
 
 app.use(cookieParser());
 

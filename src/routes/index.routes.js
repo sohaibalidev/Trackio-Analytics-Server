@@ -26,13 +26,6 @@ router.use("/api/analytics", analyticsRoutes);
 
 router.use("/", trackerRoutes);
 
-// app route to list all allowed domains for CORS
-router.get("/allowed-domains", async (req, res) => {
-  await config.initCors();
-  const allowedDomains = Array.from(config.cors.allowedOrigins);
-  res.json({ allowedDomains });
-});
-
 router.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -40,6 +33,12 @@ router.get("/api/health", (req, res) => {
     user: req.user || "Not authenticated",
     env: config.env,
   });
+});
+
+router.get("/allowed-domains", async (req, res) => {
+  await config.initCors();
+  const allowedDomains = Array.from(config.cors.allowedOrigins);
+  res.json({ allowedDomains });
 });
 
 router.use("*", (req, res) => {
