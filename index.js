@@ -10,8 +10,6 @@ const corsMiddleware = require("./src/middlewares/cors");
 (async () => {
   try {
     await connectDB();
-    console.log(`[MONGO] Connection Established`);
-
     await config.initCors();
 
     app.use(corsMiddleware);

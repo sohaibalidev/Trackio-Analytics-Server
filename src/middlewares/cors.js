@@ -17,11 +17,11 @@ const corsMiddleware = cors({
     console.log("Allowed origins:", Array.from(config.cors.allowedOrigins));
 
     if (config.cors.allowedOrigins.has(hostname)) {
-      console.log("✅ Origin allowed");
+      console.log("Origin allowed");
       return cb(null, true);
     }
 
-    console.log("❌ Origin blocked");
+    console.log("Origin blocked");
     cb(null, false);
   },
   credentials: true,
