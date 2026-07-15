@@ -24,16 +24,18 @@ config.initCors = async () => {
     const websites = await Website.find({}, "url");
     config.cors.allowedOrigins.clear();
 
-    config.cors.allowedOrigins.add(getHostname(process.env.FRONTEND_URL));
+    const frontendHost = getHostname(process.env.FRONTEND_URL);
+    config.cors.allowedOrigins.add(frontendHost);
 
     websites.forEach((w) => {
       if (w.url) config.cors.allowedOrigins.add(getHostname(w.url));
     });
 
-    console.log("Allowed CORS domains:");
+    console.log("========== CORS ALLOWED DOMAINS ==========");
     Array.from(config.cors.allowedOrigins).forEach((item, idx) => {
       console.log(`[${idx + 1}] => "${item}"`);
     });
+    console.log("===========================================");
   } catch (err) {
     console.error("[CONFIG] Error loading websites:", err.message);
     throw err;

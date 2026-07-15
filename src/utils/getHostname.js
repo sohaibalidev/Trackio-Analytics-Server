@@ -1,8 +1,10 @@
-const getHostname = (origin) => {
+const getHostname = (url) => {
+  if (!url) return "";
   try {
-    return new URL(origin).hostname.toLowerCase();
+    const parsed = new URL(url);
+    return parsed.hostname;
   } catch {
-    return null;
+    return url.replace(/^https?:\/\//, "").split("/")[0];
   }
 };
 

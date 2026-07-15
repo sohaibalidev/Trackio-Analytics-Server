@@ -5,17 +5,20 @@ const http = require("http");
 const socketio = require("./src/socket");
 const config = require("./src/config");
 const connectDB = require("./src/config/database");
+const corsMiddleware = require("./src/middlewares/cors");
 
 (async () => {
   try {
     await connectDB();
     console.log(`[MONGO] Connection Established`);
 
+    await config.initCors();
+
+    app.use(corsMiddleware);
+
     const server = http.createServer(app);
     const io = socketio(server);
     app.set("io", io);
-
-    await config.initCors();
 
     server.listen(config.port, () => {
       console.log(`[SERVER] Running at ${config.apiUrl}`);
