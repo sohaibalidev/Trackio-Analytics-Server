@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build:tracker": "javascript-obfuscator public/js/tracker.js --output public/js/tracker.min.js --compact true --string-array true --string-array-encoding base64 --control-flow-flattening true",
-    "start": "npm run build:tracker && node server.js",
-    "dev": "npm run build:tracker && nodemon server.js",
+    "start": "npm run build:tracker && node index.js",
+    "dev": "npm run build:tracker && nodemon index.js",
     "upload": "git diff --quiet && git diff --cached --quiet && echo 'No changes to commit' || (git add . && git commit -m \"auto-update\" && git push origin main)",
     "download": "git fetch origin && git reset --hard origin/main && git clean -fd && echo 'Project updated from GitHub'"
   },

@@ -1,15 +1,26 @@
 require("dotenv").config();
 
-const { server } = require("./src/app");
+const app = require("./src/app"); 
+const http = require("http");
+const socketio = require("./src/socket");
 const config = require("./src/config");
 const connectDB = require("./src/config/database");
 const routes = require("./src/routes/index.routes");
 
+// Connect to database
 connectDB();
 
-const { app } = require("./src/app");
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = socketio(server);
+app.set("io", io);
+
+// Mount routes
 app.use(routes);
 
+// Start server
 (async () => {
   try {
     await config.initCors();
@@ -25,6 +36,7 @@ app.use(routes);
   }
 })();
 
+// Error handlers
 process.on("unhandledRejection", (err) => {
   console.error("[SERVER] Unhandled Rejection:", err.message);
   server.close(() => process.exit(1));
