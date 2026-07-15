@@ -7,7 +7,6 @@ const corsMiddleware = cors({
     console.log("========== CORS DEBUG ==========");
     console.log("Request Origin:", origin);
 
-    // Postman, mobile apps, server requests
     if (!origin) {
       return cb(null, true);
     }
