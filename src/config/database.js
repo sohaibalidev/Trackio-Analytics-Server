@@ -24,8 +24,8 @@ exports.connectDB = async () => {
 
   connectionPromise = (async () => {
     try {
-      await mongoose.connect(config.MONGODB_URI, {
-        dbName: config.DB_NAME,
+      await mongoose.connect(config.database.uri, {
+        dbName: config.database.name,
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 45000,
         connectTimeoutMS: 30000,
