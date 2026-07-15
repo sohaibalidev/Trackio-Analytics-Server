@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const config = require("./app.config");
+const config = require("./index");
 
 let isConnected = false;
 let connectionPromise = null;
